@@ -1,0 +1,25 @@
+name: Build Skill
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types:
+      - published
+
+jobs:
+  build-skill:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Build lacon.skill
+        run: python scripts/build_skill.py
+
+      - name: Upload lacon.skill artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lacon.skill
+          path: lacon.skill
