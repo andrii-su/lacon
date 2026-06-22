@@ -2,13 +2,14 @@ from pathlib import Path
 
 import pytest
 
-from lacon.primitives import aggregate, distinct, find_duplicates, filter, profile
+from lacon.primitives import aggregate, distinct, filter, find_duplicates, profile
 
 FIXTURES = Path(__file__).parent / "fixtures"
 CSV = str(FIXTURES / "sample.csv")
 
 
 # ── profile ─────────────────────────────────────────────────────────────────
+
 
 def test_profile_numeric(engine):
     r = profile(CSV, column="revenue", engine=engine)
@@ -34,11 +35,13 @@ def test_profile_categorical(engine):
 
 def test_profile_unknown_column(engine):
     from lacon.engine import EngineError
+
     with pytest.raises(EngineError, match="not found"):
         profile(CSV, column="nonexistent", engine=engine)
 
 
 # ── aggregate ───────────────────────────────────────────────────────────────
+
 
 def test_aggregate_sum(engine):
     r = aggregate(
@@ -78,17 +81,20 @@ def test_aggregate_with_where(engine):
 
 def test_aggregate_invalid_fn(engine):
     from lacon.engine import EngineError
+
     with pytest.raises(EngineError, match="Invalid aggregation"):
         aggregate(CSV, metrics=[{"col": "revenue", "fn": "median"}], engine=engine)
 
 
 def test_aggregate_no_metrics(engine):
     from lacon.engine import EngineError
+
     with pytest.raises(EngineError, match="At least one metric"):
         aggregate(CSV, metrics=[], engine=engine)
 
 
 # ── filter ──────────────────────────────────────────────────────────────────
+
 
 def test_filter_basic(engine):
     r = filter(CSV, where="country = 'US'", engine=engine)
@@ -110,6 +116,7 @@ def test_filter_limit(engine):
 
 # ── distinct ────────────────────────────────────────────────────────────────
 
+
 def test_distinct(engine):
     r = distinct(CSV, column="country", engine=engine)
     assert r["op"] == "distinct"
@@ -125,6 +132,7 @@ def test_distinct_truncated(engine):
 
 
 # ── find_duplicates ──────────────────────────────────────────────────────────
+
 
 def test_find_duplicates_none(engine):
     # all names are unique
@@ -145,5 +153,6 @@ def test_find_duplicates_found(engine):
 
 def test_find_duplicates_no_columns(engine):
     from lacon.engine import EngineError
+
     with pytest.raises(EngineError, match="At least one column"):
         find_duplicates(CSV, columns=[], engine=engine)

@@ -8,13 +8,14 @@ This document is the build brief. An implementing agent should be able to work f
 Read it fully before writing code. When a decision isn't covered here, prefer the choice
 that **spends the fewest tokens at the agent boundary** — that is the north star.
 
----
+______________________________________________________________________
 
 ## 1. Why Lacon exists (north star + positioning)
 
 **North star:** minimize what data costs an LLM.
 
 Sibling tools, same north star, different lever:
+
 - **datoon** — represent data cheaper (TOON gating) once it's *in* the prompt.
 - **Lacon** — don't put the data in the prompt at all; let the agent *query* it and return only the answer.
 - **HITL-SQL gate** — write-safety counterpart (Lacon is read-only).
@@ -36,16 +37,17 @@ opposite bet:
 the point — flexibility is the raw-SQL escape hatch; the default path is safe, cheap, and
 hard to misuse. Don't "fix" this by making raw SQL the primary interface.
 
----
+______________________________________________________________________
 
 ## 2. Prior art — check FIRST
 
 Before building, search and note what exists (lesson from naming this twice):
+
 - official DuckDB `duckdb_mcp` extension; community `duckdb-mcp-server` (mustafahasankhan, dacort); MotherDuck MCP.
 - They expose **raw SQL**. Lacon differentiates on **curated + token-shaped + safe**, not on "SQL over files."
-Record the differentiation in the README so it's defensible.
+  Record the differentiation in the README so it's defensible.
 
----
+______________________________________________________________________
 
 ## 3. Architecture
 
@@ -69,7 +71,7 @@ agent ──MCP──▶  Lacon server  ──▶  primitives layer  ──▶  
 **Formats (v0):** local CSV, Parquet, JSON/JSONL. DuckDB reads all natively. Remote (s3/http)
 is v1.
 
----
+______________________________________________________________________
 
 ## 4. The curated primitives (the core API)
 
@@ -89,11 +91,12 @@ are the logical contract (mirror in CLI args and MCP tool params).
 | `query` | `query(path, sql, limit=50)` | rows | **Escape hatch.** Read-only enforced (section 7). Auto-LIMIT. |
 
 Design rules:
+
 - Defaults are **small** (`limit=50`, `sample n=5`). The agent opts into more, explicitly.
 - `columns` projection wherever rows are returned — never return columns the agent didn't ask for unless it's `sample`/`describe`.
 - Numeric results rounded by default (configurable) to save tokens.
 
----
+______________________________________________________________________
 
 ## 5. Result-shaping layer (the value-add)
 
@@ -101,17 +104,18 @@ Every result is shaped before it leaves Lacon:
 
 1. **Schema-first.** Result envelope always states the columns + types it contains. The agent
    never has to guess the shape.
-2. **Honest truncation.** If capped, say so explicitly: `"rows": [...], "shown": 50, "total": 12834`.
+1. **Honest truncation.** If capped, say so explicitly: `"rows": [...], "shown": 50, "total": 12834`.
    Never silently drop rows.
-3. **Compact encoding.** Default to compact JSON; offer **TOON** output for uniform/tabular
+1. **Compact encoding.** Default to compact JSON; offer **TOON** output for uniform/tabular
    results (delegate to the `datoon` sibling — convert only when it actually saves tokens; do
    NOT blindly TOON-everything, that's datoon's whole lesson).
-4. **Token estimate.** Use `tiktoken` to estimate the result's token cost. Expose it in the
+1. **Token estimate.** Use `tiktoken` to estimate the result's token cost. Expose it in the
    envelope (`"~tokens": 312`). If a result would blow a configurable budget, shrink (tighten
    limit / drop to schema+sample) and report that it did.
-5. **Rounding / precision control** for floats.
+1. **Rounding / precision control** for floats.
 
 Result envelope (sketch):
+
 ```json
 {
   "op": "aggregate",
@@ -123,7 +127,7 @@ Result envelope (sketch):
 }
 ```
 
----
+______________________________________________________________________
 
 ## 6. MCP server
 
@@ -137,7 +141,7 @@ Result envelope (sketch):
 Also ship a **CLI** with the same primitives for humans/scripts/CI:
 `lacon describe data.parquet`, `lacon profile data.parquet --column country`, etc.
 
----
+______________________________________________________________________
 
 ## 7. Safety (read-only, non-negotiable)
 
@@ -151,7 +155,7 @@ Also ship a **CLI** with the same primitives for humans/scripts/CI:
 - **Resource caps:** max rows, max result bytes, query timeout.
 - No network in v0 (local files only) — closes a class of risks.
 
----
+______________________________________________________________________
 
 ## 8. Tech stack & conventions (mirror `datoon`)
 
@@ -162,7 +166,7 @@ Also ship a **CLI** with the same primitives for humans/scripts/CI:
 - Docs site under `docs/` (mkdocs, like datoon).
 - MIT license, SECURITY.md.
 
----
+______________________________________________________________________
 
 ## 9. Milestones
 
@@ -173,7 +177,7 @@ Also ship a **CLI** with the same primitives for humans/scripts/CI:
 - **v0.3:** result-shaping layer — schema-first envelope, honest truncation, token estimate, TOON option (via datoon).
 - **v1:** engine-adapter abstraction proven with a second backend (DataFusion/Polars) behind the same interface; remote files (s3/http); config/policy file; path sandbox.
 
----
+______________________________________________________________________
 
 ## 10. Testing
 
@@ -183,7 +187,7 @@ Also ship a **CLI** with the same primitives for humans/scripts/CI:
   fixed fixture — the product's whole reason to exist, so guard it in CI.
 - Safety tests: raw `query` rejects writes/DDL/multi-statement; auto-LIMIT applied; paths outside sandbox refused.
 
----
+______________________________________________________________________
 
 ## 11. Article tie-in (later)
 

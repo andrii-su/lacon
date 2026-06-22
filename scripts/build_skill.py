@@ -1,7 +1,7 @@
 """Package the lacon skill into a distributable lacon.skill zip file."""
 
-from pathlib import Path
 import zipfile
+from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
 SOURCE = REPO_ROOT / "skills" / "lacon" / "SKILL.md"

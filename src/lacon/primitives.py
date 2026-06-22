@@ -1,4 +1,4 @@
-"""Curated primitives: describe, sample, count, query, profile, aggregate, filter, distinct, find_duplicates."""
+"""Curated data primitives for lacon — all 9 operations."""
 
 from __future__ import annotations
 
@@ -91,8 +91,19 @@ def query(
 
 # ── v0.1 primitives ─────────────────────────────────────────────────────────
 
-_NUMERIC_TYPES = {"TINYINT", "SMALLINT", "INTEGER", "INT", "BIGINT", "HUGEINT",
-                  "FLOAT", "DOUBLE", "DECIMAL", "NUMERIC", "REAL"}
+_NUMERIC_TYPES = {
+    "TINYINT",
+    "SMALLINT",
+    "INTEGER",
+    "INT",
+    "BIGINT",
+    "HUGEINT",
+    "FLOAT",
+    "DOUBLE",
+    "DECIMAL",
+    "NUMERIC",
+    "REAL",
+}
 
 _VALID_AGG_FNS = {"sum", "avg", "min", "max", "count"}
 
@@ -119,14 +130,10 @@ def profile(
     _, total_rows = engine.run_select(f"SELECT COUNT(*) FROM {tbl}")
     total = total_rows[0][0]
 
-    _, null_rows = engine.run_select(
-        f"SELECT COUNT(*) FROM {tbl} WHERE \"{col}\" IS NULL"
-    )
+    _, null_rows = engine.run_select(f'SELECT COUNT(*) FROM {tbl} WHERE "{col}" IS NULL')
     null_count = null_rows[0][0]
 
-    _, dist_rows = engine.run_select(
-        f"SELECT COUNT(DISTINCT \"{col}\") FROM {tbl}"
-    )
+    _, dist_rows = engine.run_select(f'SELECT COUNT(DISTINCT "{col}") FROM {tbl}')
     distinct = dist_rows[0][0]
 
     result: dict = {
@@ -141,9 +148,7 @@ def profile(
 
     base_type = col_type.split("(")[0].strip()
     if base_type in _NUMERIC_TYPES:
-        _, stats = engine.run_select(
-            f'SELECT MIN("{col}"), MAX("{col}"), AVG("{col}") FROM {tbl}'
-        )
+        _, stats = engine.run_select(f'SELECT MIN("{col}"), MAX("{col}"), AVG("{col}") FROM {tbl}')
         result["min"] = stats[0][0]
         result["max"] = stats[0][1]
         result["mean"] = round(stats[0][2], 6) if stats[0][2] is not None else None
@@ -194,7 +199,7 @@ def aggregate(
     if where:
         sql += f" WHERE {where}"
     if group_by:
-        sql += f" GROUP BY {', '.join(f'\"{g}\"' for g in group_by)}"
+        sql += f" GROUP BY {', '.join(f'"{g}"' for g in group_by)}"
     sql += f" LIMIT {min(limit, 1000)}"
 
     cols, rows = engine.run_select(sql)
@@ -235,9 +240,7 @@ def distinct(
     col = column.replace('"', '""')
     cap = min(limit, 1000)
 
-    _, total_rows = engine.run_select(
-        f'SELECT COUNT(DISTINCT "{col}") FROM {tbl}'
-    )
+    _, total_rows = engine.run_select(f'SELECT COUNT(DISTINCT "{col}") FROM {tbl}')
     total_distinct = total_rows[0][0]
 
     _, rows = engine.run_select(

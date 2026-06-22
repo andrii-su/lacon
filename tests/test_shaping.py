@@ -8,8 +8,8 @@ import pytest
 
 from lacon.shaping import _count_tokens, shape
 
-
 # ── _count_tokens ────────────────────────────────────────────────────────────
+
 
 def test_count_tokens_returns_int_or_none():
     result = _count_tokens("hello world")
@@ -29,6 +29,7 @@ def test_count_tokens_empty_string():
 
 
 # ── shape() basic fields ─────────────────────────────────────────────────────
+
 
 def test_shape_returns_dict():
     result = shape("sample", ["a", "b"], [(1, 2), (3, 4)])
@@ -65,6 +66,7 @@ def test_shape_empty_rows():
 
 try:
     import tiktoken  # noqa: F401
+
     TIKTOKEN_AVAILABLE = True
 except ImportError:
     TIKTOKEN_AVAILABLE = False
@@ -85,6 +87,7 @@ def test_shape_tokens_reflects_full_result():
     # Build the dict as it was before ~tokens was appended
     without_tokens = {k: v for k, v in result.items() if k != "~tokens"}
     import tiktoken
+
     enc = tiktoken.get_encoding("cl100k_base")
     expected = len(enc.encode(json.dumps(without_tokens, default=str)))
     assert result["~tokens"] == expected
@@ -104,6 +107,7 @@ def test_shape_no_tokens_field_without_tiktoken():
 
 
 # ── known small payload ──────────────────────────────────────────────────────
+
 
 @pytest.mark.skipif(not TIKTOKEN_AVAILABLE, reason="tiktoken not installed")
 def test_shape_known_small_payload():

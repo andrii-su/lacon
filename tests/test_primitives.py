@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import pytest
-
 from lacon.primitives import count, describe, query, sample
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -11,6 +9,7 @@ PARQUET = str(FIXTURES / "sample.parquet")
 
 
 # ── describe ────────────────────────────────────────────────────────────────
+
 
 def test_describe_csv(engine):
     r = describe(CSV, engine)
@@ -38,6 +37,7 @@ def test_describe_parquet(engine):
 
 # ── sample ──────────────────────────────────────────────────────────────────
 
+
 def test_sample_default(engine):
     r = sample(CSV, engine=engine)
     assert r["op"] == "sample"
@@ -59,6 +59,7 @@ def test_sample_schema_columns(engine):
 
 # ── count ───────────────────────────────────────────────────────────────────
 
+
 def test_count(engine):
     r = count(CSV, engine=engine)
     assert r["op"] == "count"
@@ -72,6 +73,7 @@ def test_count_where(engine):
 
 # ── query ───────────────────────────────────────────────────────────────────
 
+
 def test_query_file_placeholder(engine):
     r = query(CSV, "SELECT name FROM {file} ORDER BY name", engine=engine)
     assert r["op"] == "query"
@@ -80,7 +82,11 @@ def test_query_file_placeholder(engine):
 
 
 def test_query_aggregate(engine):
-    r = query(CSV, "SELECT country, SUM(revenue) AS total FROM {file} GROUP BY country ORDER BY country", engine=engine)
+    r = query(
+        CSV,
+        "SELECT country, SUM(revenue) AS total FROM {file} GROUP BY country ORDER BY country",
+        engine=engine,
+    )
     assert r["op"] == "query"
     assert len(r["rows"]) == 3
     assert "sql" in r

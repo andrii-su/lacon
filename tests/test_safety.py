@@ -41,5 +41,6 @@ def test_auto_limit_not_lowered_when_sql_has_lower_limit(engine):
 
 def test_max_limit_cap(engine):
     from lacon.engine import MAX_LIMIT, inject_limit
+
     sql = inject_limit("SELECT 1", MAX_LIMIT + 9999)
     assert f"LIMIT {MAX_LIMIT}" in sql

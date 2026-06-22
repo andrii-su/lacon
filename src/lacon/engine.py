@@ -24,6 +24,7 @@ class SafetyError(EngineError):
 # Path → DuckDB table expression                                               #
 # --------------------------------------------------------------------------- #
 
+
 def _table_expr(path: str) -> str:
     safe = path.replace("'", "''")
     match Path(path).suffix.lower():
@@ -78,6 +79,7 @@ def inject_limit(sql: str, limit: int) -> str:
 # --------------------------------------------------------------------------- #
 # Engine                                                                       #
 # --------------------------------------------------------------------------- #
+
 
 class DuckDBEngine:
     """Thin wrapper around an in-memory DuckDB connection."""

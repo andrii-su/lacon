@@ -15,6 +15,13 @@ from lacon.primitives import (
 
 __all__ = [
     "DuckDBEngine",
-    "describe", "sample", "count", "query",
-    "profile", "aggregate", "filter", "distinct", "find_duplicates",
+    "describe",
+    "sample",
+    "count",
+    "query",
+    "profile",
+    "aggregate",
+    "filter",
+    "distinct",
+    "find_duplicates",
 ]

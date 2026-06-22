@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import duckdb
 import pytest
-from pathlib import Path
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -19,6 +20,7 @@ def generate_parquet():
 @pytest.fixture
 def engine():
     from lacon.engine import DuckDBEngine
+
     e = DuckDBEngine()
     yield e
     e.close()

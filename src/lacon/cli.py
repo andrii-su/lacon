@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from typing import Sequence
+from collections.abc import Sequence
 
 from lacon import primitives as P
 from lacon.engine import DuckDBEngine, EngineError
@@ -41,14 +41,21 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("path")
     p.add_argument("--where", metavar="EXPR")
 
-    p = sub.add_parser("query", parents=[_out], help="Escape hatch: read-only SQL. Use {file} placeholder.")
+    p = sub.add_parser(
+        "query", parents=[_out], help="Escape hatch: read-only SQL. Use {file} placeholder."
+    )
     p.add_argument("path")
     p.add_argument("sql")
     p.add_argument("--limit", type=int, default=50)
-    p.add_argument("--show-sql", action="store_true",
-                   help="Preview resolved SQL without executing (HITL dry-run).")
+    p.add_argument(
+        "--show-sql",
+        action="store_true",
+        help="Preview resolved SQL without executing (HITL dry-run).",
+    )
 
-    p = sub.add_parser("profile", parents=[_out], help="Per-column stats: nulls, distinct, min/max/mean or top-k.")
+    p = sub.add_parser(
+        "profile", parents=[_out], help="Per-column stats: nulls, distinct, min/max/mean or top-k."
+    )
     p.add_argument("path")
     p.add_argument("--column", required=True, metavar="COL")
     p.add_argument("--top-k", type=int, default=10)
@@ -56,12 +63,18 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("aggregate", parents=[_out], help="Grouped aggregation.")
     p.add_argument("path")
     p.add_argument("--group-by", nargs="+", metavar="COL", default=[])
-    p.add_argument("--metrics", nargs="+", metavar="COL:FN",
-                   help="e.g. revenue:sum revenue:avg. fn ∈ sum/avg/min/max/count")
+    p.add_argument(
+        "--metrics",
+        nargs="+",
+        metavar="COL:FN",
+        help="e.g. revenue:sum revenue:avg. fn ∈ sum/avg/min/max/count",
+    )
     p.add_argument("--where", metavar="EXPR")
     p.add_argument("--limit", type=int, default=50)
 
-    p = sub.add_parser("filter", parents=[_out], help="Matching rows with optional column projection.")
+    p = sub.add_parser(
+        "filter", parents=[_out], help="Matching rows with optional column projection."
+    )
     p.add_argument("path")
     p.add_argument("--where", required=True, metavar="EXPR")
     p.add_argument("--columns", nargs="+", metavar="COL")
@@ -106,13 +119,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                     result = P.count(args.path, where=args.where, engine=engine)
                 case "query":
                     result = P.query(
-                        args.path, args.sql,
+                        args.path,
+                        args.sql,
                         limit=args.limit,
                         show_sql=args.show_sql,
                         engine=engine,
                     )
                 case "profile":
-                    result = P.profile(args.path, column=args.column, top_k=args.top_k, engine=engine)
+                    result = P.profile(
+                        args.path, column=args.column, top_k=args.top_k, engine=engine
+                    )
                 case "aggregate":
                     metrics = _parse_metrics(args.metrics or [])
                     result = P.aggregate(
@@ -132,9 +148,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                         engine=engine,
                     )
                 case "distinct":
-                    result = P.distinct(args.path, column=args.column, limit=args.limit, engine=engine)
+                    result = P.distinct(
+                        args.path, column=args.column, limit=args.limit, engine=engine
+                    )
                 case "find-duplicates":
-                    result = P.find_duplicates(args.path, columns=args.columns, limit=args.limit, engine=engine)
+                    result = P.find_duplicates(
+                        args.path, columns=args.columns, limit=args.limit, engine=engine
+                    )
                 case _:
                     parser.print_help()
                     return 1
