@@ -1,0 +1,478 @@
+:root {
+    --bg: #f0ebe1;
+    --bg-1: #e6e0d5;
+    --surface: #faf7f2;
+    --ink: #0c0b09;
+    --muted: #7a7068;
+    --accent: #F59E0B;
+    --accent-ink: #ffffff;
+    --border: rgba(12, 11, 9, 0.82);
+    --border-soft: rgba(12, 11, 9, 0.14);
+    --rule: 1.5px solid rgba(12, 11, 9, 0.82);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+}
+
+body {
+    font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    background-color: var(--bg);
+    line-height: 1.55;
+}
+
+a {
+    color: inherit;
+}
+
+main {
+    width: min(1080px, 92vw);
+    margin: 0 auto;
+    padding: 1.5rem 0 5rem;
+}
+
+/* ── Topbar ───────────────────────────────────────── */
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    border-bottom: var(--rule);
+}
+
+.topbar-inner {
+    width: min(1080px, 92vw);
+    margin: 0 auto;
+    padding: 0.85rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.brand {
+    font-weight: 800;
+    font-size: 1.05rem;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.brand::before {
+    content: "\201C";
+    color: var(--accent);
+    margin-right: 0.05em;
+}
+
+.brand::after {
+    content: "\201D";
+    color: var(--accent);
+    margin-left: 0.05em;
+}
+
+.nav-links {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.nav-links a {
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.65rem;
+    border: 1px solid transparent;
+    color: var(--muted);
+}
+
+.nav-links a:hover {
+    border-color: var(--border);
+    color: var(--ink);
+}
+
+/* ── Cards ────────────────────────────────────────── */
+
+.card {
+    border: var(--rule);
+    background: var(--surface);
+}
+
+/* ── Hero ─────────────────────────────────────────── */
+
+.hero {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 0;
+    margin-top: 2rem;
+    border: var(--rule);
+}
+
+.hero-copy {
+    padding: 2.2rem 2rem;
+    border: none;
+    border-right: var(--rule);
+}
+
+.hero-panel {
+    padding: 1.6rem;
+    border: none;
+    background: var(--bg-1);
+    display: grid;
+    gap: 0;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    padding: 0.25rem 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.chip::before {
+    content: "— ";
+    color: var(--accent);
+    font-weight: 400;
+}
+
+h1,
+h2,
+h3 {
+    line-height: 1.1;
+    margin-top: 0;
+}
+
+h1 {
+    margin: 1rem 0 0.7rem;
+    font-size: clamp(2rem, 4.5vw, 3.2rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.hero p {
+    margin: 0;
+    color: var(--muted);
+    max-width: 54ch;
+    font-size: 1rem;
+}
+
+.cta {
+    margin-top: 1.6rem;
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    padding: 0 1rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-decoration: none;
+    text-transform: uppercase;
+    border: var(--rule);
+}
+
+.button.primary {
+    background: var(--ink);
+    color: var(--surface);
+}
+
+.button.primary:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.button.secondary {
+    background: transparent;
+    color: var(--ink);
+}
+
+.button.secondary:hover {
+    background: var(--ink);
+    color: var(--surface);
+}
+
+/* ── Metrics ──────────────────────────────────────── */
+
+.metric {
+    padding: 1.2rem 1.4rem;
+    border-bottom: var(--rule);
+}
+
+.metric:last-child {
+    border-bottom: none;
+}
+
+.metric strong {
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1;
+    display: block;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+}
+
+.metric span {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.3rem;
+    display: block;
+}
+
+/* ── Sections ─────────────────────────────────────── */
+
+.section {
+    margin-top: 1.5rem;
+    padding: 0;
+}
+
+.section-header {
+    padding: 1.2rem 1.6rem;
+    border-bottom: var(--rule);
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+}
+
+.section-index {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    min-width: 2.4rem;
+}
+
+.section-title {
+    margin: 0;
+    font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.section-body {
+    padding: 1.4rem 1.6rem;
+}
+
+.section-lead {
+    color: var(--muted);
+    margin: 0 0 1.4rem;
+    font-size: 0.95rem;
+    max-width: 64ch;
+}
+
+/* ── Features grid ────────────────────────────────── */
+
+.grid {
+    display: grid;
+    gap: 0;
+}
+
+.grid.features {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: var(--rule);
+}
+
+.feature {
+    padding: 1.2rem;
+    border-right: var(--rule);
+}
+
+.feature:last-child {
+    border-right: none;
+}
+
+.feature-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+}
+
+.feature h3 {
+    font-size: 1rem;
+    font-weight: 800;
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.01em;
+}
+
+.feature p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* ── Code block ───────────────────────────────────── */
+
+.code {
+    font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    background: var(--ink);
+    color: #f0ebe1;
+    border: var(--rule);
+    padding: 1.2rem;
+    overflow-x: auto;
+    font-size: 0.88rem;
+    line-height: 1.65;
+}
+
+.code pre {
+    margin: 0;
+}
+
+/* ── Table ────────────────────────────────────────── */
+
+.table-wrap {
+    overflow-x: auto;
+    border: var(--rule);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 480px;
+    background: var(--surface);
+}
+
+th,
+td {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    border-bottom: 1.5px solid var(--border-soft);
+    font-size: 0.88rem;
+}
+
+th {
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    background: var(--bg-1);
+    border-bottom: var(--rule);
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+td:last-child,
+th:last-child {
+    text-align: right;
+}
+
+td code {
+    font-family: "JetBrains Mono", monospace;
+    background: var(--bg-1);
+    border: 1px solid var(--border-soft);
+    padding: 0.1em 0.4em;
+    font-size: 0.85em;
+    color: var(--ink);
+}
+
+/* ── Note ─────────────────────────────────────────── */
+
+.note {
+    margin-top: 1rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.note code {
+    font-family: "JetBrains Mono", monospace;
+    background: var(--bg-1);
+    border: 1px solid var(--border-soft);
+    padding: 0.1em 0.4em;
+    font-size: 0.85em;
+    color: var(--ink);
+}
+
+/* ── Footer ───────────────────────────────────────── */
+
+.footer {
+    margin-top: 3rem;
+    padding-top: 1.2rem;
+    border-top: var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.footer a {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.footer a:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.footer-mark {
+    color: var(--accent);
+    font-size: 1rem;
+}
+
+/* ── Responsive ───────────────────────────────────── */
+
+@media (max-width: 860px) {
+    .hero {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-copy {
+        border-right: none;
+        border-bottom: var(--rule);
+    }
+
+    .grid.features {
+        grid-template-columns: 1fr;
+    }
+
+    .feature {
+        border-right: none;
+        border-bottom: var(--rule);
+    }
+
+    .feature:last-child {
+        border-bottom: none;
+    }
+
+    .footer {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+}
