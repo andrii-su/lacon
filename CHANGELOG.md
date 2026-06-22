@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/andrii-su/lacon/compare/v1.0.0...v1.0.1) (2026-06-22)
+
+
+### Bug Fixes
+
+* remove environment from publish job to match PyPI trusted publisher config ([6ae4855](https://github.com/andrii-su/lacon/commit/6ae48551400a0ad63093304dab19b1483dabead1))
+
 # 1.0.0 (2026-06-22)
 
 
