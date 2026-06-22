@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/andrii-su/lacon/compare/v1.1.0...v1.1.1) (2026-06-22)
+
+
+### Bug Fixes
+
+* restore environment tracking in publish job ([12ec4a2](https://github.com/andrii-su/lacon/commit/12ec4a241f4d2c7954bd2d8839d04f4877fefa36))
+
 # [1.1.0](https://github.com/andrii-su/lacon/compare/v1.0.2...v1.1.0) (2026-06-22)
 
 
