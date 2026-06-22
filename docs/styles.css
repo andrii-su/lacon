@@ -1,14 +1,14 @@
 :root {
-    --bg: #f0ebe1;
-    --bg-1: #e6e0d5;
-    --surface: #faf7f2;
-    --ink: #0c0b09;
-    --muted: #7a7068;
+    --bg: #f2f4f7;
+    --bg-1: #e8eaee;
+    --surface: #ffffff;
+    --ink: #0f1117;
+    --muted: #6b7280;
     --accent: #F59E0B;
     --accent-ink: #ffffff;
-    --border: rgba(12, 11, 9, 0.82);
-    --border-soft: rgba(12, 11, 9, 0.14);
-    --rule: 1.5px solid rgba(12, 11, 9, 0.82);
+    --border: rgba(15, 17, 23, 0.80);
+    --border-soft: rgba(15, 17, 23, 0.12);
+    --rule: 1.5px solid rgba(15, 17, 23, 0.80);
 }
 
 * {
@@ -37,6 +37,21 @@ main {
     width: min(1080px, 92vw);
     margin: 0 auto;
     padding: 1.5rem 0 5rem;
+}
+
+/* ── Banner ───────────────────────────────────────── */
+
+.banner-wrap {
+    margin-top: 1.5rem;
+    border: var(--rule);
+    overflow: hidden;
+    line-height: 0;
+}
+
+.banner-wrap img {
+    width: 100%;
+    height: auto;
+    display: block;
 }
 
 /* ── Topbar ───────────────────────────────────────── */
@@ -201,6 +216,7 @@ h1 {
 .button.primary:hover {
     background: var(--accent);
     border-color: var(--accent);
+    color: var(--ink);
 }
 
 .button.secondary {
@@ -334,7 +350,7 @@ h1 {
 .code {
     font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
     background: var(--ink);
-    color: #f0ebe1;
+    color: #f2f4f7;
     border: var(--rule);
     padding: 1.2rem;
     overflow-x: auto;
@@ -382,18 +398,14 @@ tr:last-child td {
     border-bottom: none;
 }
 
-td:last-child,
-th:last-child {
-    text-align: right;
-}
-
 td code {
-    font-family: "JetBrains Mono", monospace;
-    background: var(--bg-1);
+    font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    background: var(--bg);
     border: 1px solid var(--border-soft);
-    padding: 0.1em 0.4em;
-    font-size: 0.85em;
+    padding: 0.15em 0.45em;
+    font-size: 0.82em;
     color: var(--ink);
+    font-weight: 600;
 }
 
 /* ── Note ─────────────────────────────────────────── */

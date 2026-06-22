@@ -1,0 +1,194 @@
+<svg
+  width="1280"
+  height="640"
+  viewBox="0 0 1280 640"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-labelledby="title desc"
+>
+  <title id="title">lacon banner</title>
+  <desc id="desc">lacon — token-lean agent↔data query interface. Query files, don't read them.</desc>
+
+  <defs>
+    <!-- Grid pattern — thematic for data/SQL -->
+    <pattern id="grid" patternUnits="userSpaceOnUse" width="20" height="20">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#0f1117" stroke-width="0.8" stroke-opacity="0.18"/>
+    </pattern>
+  </defs>
+
+  <!-- Background: cool light gray -->
+  <rect width="1280" height="640" fill="#f2f4f7"/>
+
+  <!-- Outer border -->
+  <rect x="1" y="1" width="1278" height="638" stroke="#0f1117" stroke-width="2"/>
+
+  <!-- Metrics strip background -->
+  <rect x="2" y="410" width="1276" height="228" fill="#e8eaee"/>
+
+  <!-- Header rule -->
+  <line x1="0" y1="56" x2="1280" y2="56" stroke="#0f1117" stroke-width="1.5"/>
+
+  <!-- Metrics strip top rule -->
+  <line x1="0" y1="410" x2="1280" y2="410" stroke="#0f1117" stroke-width="2"/>
+
+  <!-- Metric column dividers -->
+  <line x1="427" y1="410" x2="427" y2="640" stroke="#0f1117" stroke-width="1.5"/>
+  <line x1="854" y1="410" x2="854" y2="640" stroke="#0f1117" stroke-width="1.5"/>
+
+  <!-- Decorative grid block top-right -->
+  <rect x="1082" y="64" width="152" height="152" fill="url(#grid)"/>
+  <rect x="1082" y="64" width="152" height="152" stroke="#0f1117" stroke-width="1.5"/>
+  <!-- Grid block inner lines -->
+  <line x1="1082" y1="115" x2="1234" y2="115" stroke="#0f1117" stroke-width="1" stroke-opacity="0.25"/>
+  <line x1="1082" y1="165" x2="1234" y2="165" stroke="#0f1117" stroke-width="1" stroke-opacity="0.25"/>
+  <line x1="1133" y1="64" x2="1133" y2="216" stroke="#0f1117" stroke-width="1" stroke-opacity="0.25"/>
+  <line x1="1184" y1="64" x2="1184" y2="216" stroke="#0f1117" stroke-width="1" stroke-opacity="0.25"/>
+  <!-- Amber cell highlight -->
+  <rect x="1133" y="115" width="51" height="50" fill="#F59E0B" fill-opacity="0.35"/>
+
+  <!-- Header: brand label left -->
+  <text
+    x="48"
+    y="36"
+    fill="#0f1117"
+    fill-opacity="0.45"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="11"
+    font-weight="700"
+    letter-spacing="4"
+  >LACON</text>
+
+  <!-- Header: version right -->
+  <text
+    x="1232"
+    y="36"
+    fill="#0f1117"
+    fill-opacity="0.45"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="11"
+    font-weight="700"
+    letter-spacing="4"
+    text-anchor="end"
+  >V 1.0</text>
+
+  <!-- Badge -->
+  <rect x="48" y="80" width="302" height="36" stroke="#0f1117" stroke-width="1.5"/>
+  <text
+    x="64"
+    y="102"
+    fill="#F59E0B"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="12"
+    font-weight="700"
+    letter-spacing="0.5"
+  >—</text>
+  <text
+    x="84"
+    y="102"
+    fill="#6b7280"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="12"
+    font-weight="700"
+    letter-spacing="2.5"
+  >TOKEN-LEAN DATA INTERFACE</text>
+
+  <!-- Main title with amber quotes -->
+  <text
+    x="44"
+    y="268"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="148"
+    font-weight="800"
+    letter-spacing="-2"
+  ><tspan fill="#F59E0B">&#x201C;</tspan><tspan fill="#0f1117">lacon</tspan><tspan fill="#F59E0B">&#x201D;</tspan></text>
+
+  <!-- Subtitle line 1 -->
+  <text
+    x="50"
+    y="322"
+    fill="#6b7280"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="20"
+    font-weight="600"
+    letter-spacing="2"
+  >QUERY DATA FILES. DON'T READ THEM.</text>
+
+  <!-- Subtitle line 2 -->
+  <text
+    x="50"
+    y="354"
+    fill="#6b7280"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="20"
+    font-weight="600"
+    letter-spacing="2"
+  >DUCKDB UNDER THE HOOD. TOKENS STAY LEAN.</text>
+
+  <!-- Metric 1: label -->
+  <text
+    x="48"
+    y="452"
+    fill="#6b7280"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="11"
+    font-weight="700"
+    letter-spacing="3"
+  >CURATED PRIMITIVES</text>
+
+  <!-- Metric 1: value -->
+  <text
+    x="48"
+    y="578"
+    fill="#0f1117"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="104"
+    font-weight="800"
+    letter-spacing="-3"
+  >9<tspan fill="#F59E0B" font-size="52" dy="-40">&#x2605;</tspan></text>
+
+  <!-- Metric 2: label -->
+  <text
+    x="475"
+    y="452"
+    fill="#6b7280"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="11"
+    font-weight="700"
+    letter-spacing="3"
+  >TOKENS PER DESCRIBE CALL</text>
+
+  <!-- Metric 2: value -->
+  <text
+    x="475"
+    y="578"
+    fill="#0f1117"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="104"
+    font-weight="800"
+    letter-spacing="-3"
+  >89tk</text>
+
+  <!-- Metric 3: label -->
+  <text
+    x="902"
+    y="452"
+    fill="#6b7280"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="11"
+    font-weight="700"
+    letter-spacing="3"
+  >WRITES — ALWAYS READ-ONLY</text>
+
+  <!-- Metric 3: value -->
+  <text
+    x="902"
+    y="578"
+    fill="#0f1117"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="104"
+    font-weight="800"
+    letter-spacing="-3"
+  >0</text>
+
+</svg>
