@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=82.0.1", "setuptools-scm[toml]>=10.0.5", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lacon"
+dynamic = ["version"]
+description = "Token-lean agent↔data query interface — curated DuckDB primitives, not raw SQL passthrough."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Andrii Suruhov", email = "andrii.suruhov@gmail.com" }
+]
+keywords = ["llm", "agent", "duckdb", "data", "csv", "parquet", "mcp"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+dependencies = [
+    "duckdb>=1.0.0",
+    "sqlglot>=25.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=9.0.3", "pre-commit>=4.6.0"]
+tokens = ["tiktoken>=0.13.0"]
+mcp = ["mcp>=1.27.1"]
+
+[project.urls]
+Homepage = "https://github.com/andrii-su/lacon"
+Repository = "https://github.com/andrii-su/lacon"
+Issues = "https://github.com/andrii-su/lacon/issues"
+
+[project.scripts]
+lacon = "lacon.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.package-data]
+lacon = ["py.typed"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools_scm]
+version_file = "src/lacon/_version.py"
+fallback_version = "0.0.0"
+local_scheme = "no-local-version"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
