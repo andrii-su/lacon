@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/andrii-su/lacon/compare/v1.0.2...v1.1.0) (2026-06-22)
+
+
+### Features
+
+* unique visual identity — banner SVG, cool-tone docs, comprehensive README ([e0b4107](https://github.com/andrii-su/lacon/commit/e0b4107bd94e23d6336d28ed03cfb47a76b55a84))
+
 ## [1.0.2](https://github.com/andrii-su/lacon/compare/v1.0.1...v1.0.2) (2026-06-22)
 
 
