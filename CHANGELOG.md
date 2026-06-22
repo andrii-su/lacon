@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/andrii-su/lacon/compare/v1.0.1...v1.0.2) (2026-06-22)
+
+
+### Bug Fixes
+
+* use API token auth for PyPI publish ([a6baff7](https://github.com/andrii-su/lacon/commit/a6baff716dc660864bf9215259b79f77305c3c88))
+
 ## [1.0.1](https://github.com/andrii-su/lacon/compare/v1.0.0...v1.0.1) (2026-06-22)
 
 
