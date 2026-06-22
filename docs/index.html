@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            name="description"
+            content="lacon lets agents query CSV, Parquet, and JSON through curated DuckDB primitives — shaped, capped, and token-costed."
+        />
+        <title>lacon | Token-lean data interface</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="./styles.css" />
+    </head>
+    <body>
+        <header class="topbar">
+            <div class="topbar-inner">
+                <a class="brand" href="#top">lacon</a>
+                <nav class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#primitives">Primitives</a>
+                    <a href="#install">Install</a>
+                    <a href="https://github.com/andrii-su/lacon">GitHub</a>
+                </nav>
+            </div>
+        </header>
+
+        <main id="top">
+            <section class="hero">
+                <article class="card hero-copy">
+                    <span class="chip">Token-lean data interface</span>
+                    <h1>
+                        Query data files. Don't read them.
+                    </h1>
+                    <p>
+                        Agents query CSV, Parquet, and JSON through curated
+                        DuckDB primitives and get back only the answer —
+                        shaped, capped, and token-costed. No file dumping.
+                    </p>
+                    <div class="cta">
+                        <a
+                            class="button primary"
+                            href="https://github.com/andrii-su/lacon"
+                            >Open repository</a
+                        >
+                        <a
+                            class="button secondary"
+                            href="#install"
+                            >Quick start</a
+                        >
+                    </div>
+                </article>
+
+                <aside class="card hero-panel">
+                    <div class="metric">
+                        <strong data-target="9">0</strong>
+                        <span>Curated primitives</span>
+                    </div>
+                    <div class="metric">
+                        <strong data-target="89" data-suffix=" tk">0 tk</strong>
+                        <span>Tokens for describe call</span>
+                    </div>
+                    <div class="metric">
+                        <strong data-target="0">0</strong>
+                        <span>Writes — always read-only</span>
+                    </div>
+                </aside>
+            </section>
+
+            <section id="features" class="section card">
+                <div class="section-header">
+                    <span class="section-index">01</span>
+                    <h2 class="section-title">Why lacon</h2>
+                </div>
+                <div class="section-body">
+                    <p class="section-lead">
+                        Built for AI agents that need to understand data
+                        without spending tokens reading raw files.
+                    </p>
+                    <div class="grid features">
+                        <article class="feature">
+                            <div class="feature-label">Primitives</div>
+                            <h3>Curated, not raw SQL</h3>
+                            <p>
+                                describe / sample / profile / aggregate /
+                                filter — operations an agent can't get
+                                syntactically wrong. Raw SQL stays an escape
+                                hatch.
+                            </p>
+                        </article>
+                        <article class="feature">
+                            <div class="feature-label">Tokens</div>
+                            <h3>~tokens on every response</h3>
+                            <p>
+                                Every result includes its estimated token cost.
+                                Agents know what they spend before deciding
+                                what to ask next.
+                            </p>
+                        </article>
+                        <article class="feature">
+                            <div class="feature-label">Safety</div>
+                            <h3>HITL for the escape hatch</h3>
+                            <p>
+                                query --show-sql previews resolved SQL before
+                                execution. Curated primitives need no
+                                confirmation — their SQL is fully determined
+                                by parameters.
+                            </p>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section id="primitives" class="section card">
+                <div class="section-header">
+                    <span class="section-index">02</span>
+                    <h2 class="section-title">Primitives</h2>
+                </div>
+                <div class="section-body">
+                    <p class="section-lead">
+                        Nine curated operations cover what agents ask about
+                        data. Each maps to a deterministic SQL pattern —
+                        no prompt injection surface.
+                    </p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Command</th>
+                                    <th>Use when the agent asks…</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>describe</code></td>
+                                    <td>"what's in this file?", "what columns?", "how many rows?"</td>
+                                </tr>
+                                <tr>
+                                    <td><code>sample</code></td>
+                                    <td>"show me some rows", "what does the data look like?"</td>
+                                </tr>
+                                <tr>
+                                    <td><code>count</code></td>
+                                    <td>"how many rows where X?"</td>
+                                </tr>
+                                <tr>
+                                    <td><code>profile</code></td>
+                                    <td>"tell me about column X", "any nulls?", "what values?"</td>
+                                </tr>
+                                <tr>
+                                    <td><code>distinct</code></td>
+                                    <td>"what are the unique values of X?"</td>
+                                </tr>
+                                <tr>
+                                    <td><code>aggregate</code></td>
+                                    <td>"total/avg X by Y", "group by Z"</td>
+                                </tr>
+                                <tr>
+                                    <td><code>filter</code></td>
+                                    <td>"show rows where X", projected columns</td>
+                                </tr>
+                                <tr>
+                                    <td><code>find-duplicates</code></td>
+                                    <td>"are there duplicates?"</td>
+                                </tr>
+                                <tr>
+                                    <td><code>query</code></td>
+                                    <td>anything the primitives above can't express (HITL required)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="install" class="section card">
+                <div class="section-header">
+                    <span class="section-index">03</span>
+                    <h2 class="section-title">Install and run</h2>
+                </div>
+                <div class="section-body">
+                    <div class="code">
+                        <pre># install
+pip install lacon
+pip install lacon[tokens]   # adds ~tokens to every response
+
+# Claude Code skill
+claude skill install https://github.com/andrii-su/lacon/releases/latest/download/lacon.skill
+
+# quick start
+lacon describe sales.csv --pretty
+lacon aggregate sales.csv --group-by country --metrics revenue:sum --pretty
+lacon query sales.csv "SELECT year, SUM(revenue) FROM {file} GROUP BY year" --show-sql --pretty</pre>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="footer">
+                <span><span data-year></span> lacon</span>
+                <span class="footer-mark">&#169;</span>
+                <a href="https://github.com/andrii-su/lacon">GitHub</a>
+            </footer>
+        </main>
+
+        <script src="./app.js" defer></script>
+    </body>
+</html>

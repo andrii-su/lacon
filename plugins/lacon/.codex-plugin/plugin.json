@@ -1,0 +1,27 @@
+{
+  "name": "lacon",
+  "version": "0.1.0",
+  "description": "Token-lean data query interface for agents. Query CSV/Parquet/JSON via curated DuckDB primitives — no file dumping.",
+  "author": {
+    "name": "Andrii Suruhov",
+    "url": "https://github.com/andrii-su"
+  },
+  "homepage": "https://github.com/andrii-su/lacon",
+  "repository": "https://github.com/andrii-su/lacon",
+  "license": "MIT",
+  "keywords": ["llm", "agent", "data", "duckdb", "csv", "parquet", "analytics"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Lacon",
+    "shortDescription": "Query data files without dumping them into context.",
+    "longDescription": "Token-lean agent↔data interface. Query CSV/Parquet/JSON using curated DuckDB primitives (describe/sample/count/query/aggregate/filter) and get back minimal, shaped answers.",
+    "developerName": "Andrii Suruhov",
+    "category": "Data",
+    "capabilities": ["Write"],
+    "websiteURL": "https://github.com/andrii-su/lacon",
+    "defaultPrompt": [
+      "Use lacon primitives when working with data files. Start with describe, then sample, then targeted queries. Never dump files into context."
+    ],
+    "brandColor": "#F59E0B"
+  }
+}
