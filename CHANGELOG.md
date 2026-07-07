@@ -1,3 +1,13 @@
+## [1.1.2](https://github.com/andrii-su/lacon/compare/v1.1.1...v1.1.2) (2026-07-07)
+
+
+### Bug Fixes
+
+* **cli:** clean error for missing files and DuckDB failures ([aebdbe3](https://github.com/andrii-su/lacon/commit/aebdbe3eb260fd3946c4b4c69d35561336ee37cb))
+* **engine:** don't let a subquery LIMIT bypass the auto-LIMIT cap ([041d80f](https://github.com/andrii-su/lacon/commit/041d80f9d8062ab3e83657d8faca517f291d4572))
+* **security:** close SQL injection in where/column primitives ([cb3420a](https://github.com/andrii-su/lacon/commit/cb3420a1fcb66cf58b6d422be30846f60398f6ce))
+* **shaping:** honest truncation — report total and truncated ([9cdc31d](https://github.com/andrii-su/lacon/commit/9cdc31d6df45a4596d0cb98c78664297c2f5096f))
+
 ## [1.1.1](https://github.com/andrii-su/lacon/compare/v1.1.0...v1.1.1) (2026-06-22)
 
 
