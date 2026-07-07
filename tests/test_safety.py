@@ -46,6 +46,33 @@ def test_max_limit_cap(engine):
     assert f"LIMIT {MAX_LIMIT}" in sql
 
 
+def test_subquery_limit_does_not_bypass_auto_limit():
+    from lacon.engine import has_top_level_limit, inject_limit
+
+    sql = "SELECT * FROM t WHERE id IN (SELECT id FROM t LIMIT 3)"
+    assert has_top_level_limit(sql) is False
+    assert "LIMIT 50" in inject_limit(sql, 50)
+
+
+def test_top_level_limit_detected():
+    from lacon.engine import has_top_level_limit
+
+    assert has_top_level_limit("SELECT * FROM t LIMIT 10") is True
+    assert has_top_level_limit("SELECT * FROM t") is False
+
+
+def test_query_subquery_limit_still_gets_outer_cap(engine):
+    # Inner LIMIT 3 must not stop the outer auto-LIMIT from capping the result.
+    r = query(
+        CSV,
+        "SELECT * FROM {file} WHERE revenue IN (SELECT revenue FROM {file} LIMIT 3)",
+        limit=2,
+        engine=engine,
+    )
+    assert "LIMIT 2" in r["sql"]
+    assert r["shown"] <= 2
+
+
 # ── injection through non-query primitives (regression for the where/column hole) ──
 
 

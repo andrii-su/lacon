@@ -65,11 +65,27 @@ def validate_query(sql: str) -> None:
         raise SafetyError(f"Only SELECT allowed, got {type(stmt).__name__}")
 
 
+def has_top_level_limit(sql: str) -> bool:
+    """True only if the *outermost* statement carries a LIMIT.
+
+    A plain substring/regex check is fooled by a LIMIT inside a subquery
+    (``... WHERE id IN (SELECT id FROM t LIMIT 3)``) and would then skip the
+    outer cap, letting the whole result through unbounded. Inspect the AST so
+    only a top-level LIMIT counts.
+    """
+    try:
+        expr = sqlglot.parse_one(sql, dialect="duckdb")
+    except Exception:
+        # Unparseable → fall back to the conservative substring check.
+        return bool(re.search(r"\bLIMIT\b", sql, re.IGNORECASE))
+    return expr is not None and expr.args.get("limit") is not None
+
+
 def inject_limit(sql: str, limit: int) -> str:
-    """Append LIMIT if the statement lacks one; cap limit at MAX_LIMIT."""
+    """Append LIMIT if the outermost statement lacks one; cap limit at MAX_LIMIT."""
     limit = min(limit, MAX_LIMIT)
     stripped = sql.rstrip().rstrip(";")
-    if not re.search(r"\bLIMIT\b", stripped, re.IGNORECASE):
+    if not has_top_level_limit(stripped):
         return f"{stripped} LIMIT {limit}"
     return stripped
 

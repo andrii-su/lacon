@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 
 from lacon.engine import (
@@ -11,12 +10,11 @@ from lacon.engine import (
     DuckDBEngine,
     EngineError,
     _table_expr,
+    has_top_level_limit,
     inject_limit,
     validate_query,
 )
 from lacon.shaping import _count_tokens, shape
-
-_HAS_LIMIT = re.compile(r"\bLIMIT\b", re.IGNORECASE)
 
 
 def describe(path: str, engine: DuckDBEngine) -> dict:
@@ -93,8 +91,8 @@ def query(
     if show_sql:
         return {"op": "query", "sql": final, "will_execute": False}
 
-    if _HAS_LIMIT.search(resolved):
-        # Caller set their own LIMIT — respect it, don't second-guess truncation.
+    if has_top_level_limit(resolved):
+        # Caller set their own top-level LIMIT — respect it, don't second-guess truncation.
         cols, rows = engine.run_select(final)
         result = shape("query", cols, rows)
     else:
