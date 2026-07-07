@@ -7,6 +7,8 @@ import json
 import sys
 from collections.abc import Sequence
 
+import duckdb
+
 from lacon import primitives as P
 from lacon.engine import DuckDBEngine, EngineError
 
@@ -168,6 +170,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
     except FileNotFoundError as exc:
         sys.stderr.write(f"lacon: file not found: {exc}\n")
+        return 1
+    except duckdb.IOException as exc:
+        # DuckDB surfaces a missing/unreadable data file as an IO error.
+        first_line = str(exc).splitlines()[0]
+        sys.stderr.write(f"lacon: cannot read file: {first_line}\n")
+        return 1
+    except duckdb.Error as exc:
+        # Any other DuckDB failure (bad WHERE expr, unknown column, type error) —
+        # report cleanly instead of dumping a traceback at the user.
+        first_line = str(exc).splitlines()[0]
+        sys.stderr.write(f"lacon error: {first_line}\n")
         return 1
 
 
