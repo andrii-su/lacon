@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from lacon.engine import SafetyError
-from lacon.primitives import query
+from lacon.primitives import aggregate, count, distinct, filter, find_duplicates, profile, query
 
 FIXTURES = Path(__file__).parent / "fixtures"
 CSV = str(FIXTURES / "sample.csv")
@@ -44,3 +44,67 @@ def test_max_limit_cap(engine):
 
     sql = inject_limit("SELECT 1", MAX_LIMIT + 9999)
     assert f"LIMIT {MAX_LIMIT}" in sql
+
+
+# ── injection through non-query primitives (regression for the where/column hole) ──
+
+
+def test_count_where_rejects_multi_statement(engine):
+    with pytest.raises(SafetyError):
+        count(CSV, where="1=1; SELECT COUNT(*) FROM read_csv('x')", engine=engine)
+
+
+def test_filter_where_rejects_multi_statement(engine):
+    with pytest.raises(SafetyError):
+        filter(CSV, where="1=1; INSTALL httpfs", engine=engine)
+
+
+def test_aggregate_where_rejects_multi_statement(engine):
+    with pytest.raises(SafetyError):
+        aggregate(
+            CSV,
+            metrics=[{"col": "revenue", "fn": "sum"}],
+            where="1=1; DROP TABLE x",
+            engine=engine,
+        )
+
+
+def test_distinct_column_rejects_injection(engine):
+    # Identifier-quote escaping keeps the payload a single (bogus) column name, so
+    # the ";INSTALL" never separates into its own statement — DuckDB just can't bind it.
+    with pytest.raises(Exception):  # noqa: B017 - duckdb BinderException, injection neutralised
+        distinct(CSV, column='country" IS NOT NULL; INSTALL httpfs --', engine=engine)
+
+
+def test_find_duplicates_rejects_injection(engine):
+    with pytest.raises(SafetyError):
+        find_duplicates(CSV, columns=['country" ; INSTALL httpfs --'], engine=engine)
+
+
+def test_injection_cannot_write_file_via_where(engine, tmp_path):
+    """The original exploit: COPY ... TO smuggled through a where clause must not run."""
+    target = tmp_path / "pwned.csv"
+    payload = (
+        f"1=1; COPY (SELECT 42) TO '{target}' (FORMAT CSV); "
+        f"SELECT COUNT(*) FROM read_csv('{CSV}') WHERE 1=1"
+    )
+    with pytest.raises(SafetyError):
+        count(CSV, where=payload, engine=engine)
+    assert not target.exists()
+
+
+def test_profile_rejects_column_injection(engine):
+    with pytest.raises((SafetyError, Exception)):
+        profile(CSV, column='revenue"); INSTALL httpfs --', engine=engine)
+
+
+def test_query_rejects_install(engine):
+    """The AST guard is the real guarantee: INSTALL is not a SELECT, so it's refused."""
+    with pytest.raises(SafetyError):
+        query(CSV, "INSTALL httpfs", engine=engine)
+
+
+def test_legit_where_with_keyword_literal_still_works(engine):
+    """Data values that happen to contain SQL keywords must not be falsely rejected."""
+    r = count(CSV, where="country = 'CREATE'", engine=engine)
+    assert r["count"] == 0

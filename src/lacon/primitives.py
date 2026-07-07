@@ -55,7 +55,7 @@ def count(
     sql = f"SELECT COUNT(*) FROM {tbl}"
     if where:
         sql += f" WHERE {where}"
-    _, rows = engine.run_select(sql)
+    _, rows = engine.run_checked(sql)
     result = {"op": "count", "count": rows[0][0]}
     token_count = _count_tokens(json.dumps(result, default=str))
     if token_count is not None:
@@ -117,7 +117,7 @@ def profile(
     """Per-column stats: null %, distinct count, min/max/mean (numeric), top-k values."""
     assert engine is not None
     tbl = _table_expr(path)
-    col = column.replace("'", "''")
+    col = column.replace('"', '""')
 
     _, schema_rows = engine.run_select(f"DESCRIBE SELECT * FROM {tbl}")
     col_type = next(
@@ -130,10 +130,10 @@ def profile(
     _, total_rows = engine.run_select(f"SELECT COUNT(*) FROM {tbl}")
     total = total_rows[0][0]
 
-    _, null_rows = engine.run_select(f'SELECT COUNT(*) FROM {tbl} WHERE "{col}" IS NULL')
+    _, null_rows = engine.run_checked(f'SELECT COUNT(*) FROM {tbl} WHERE "{col}" IS NULL')
     null_count = null_rows[0][0]
 
-    _, dist_rows = engine.run_select(f'SELECT COUNT(DISTINCT "{col}") FROM {tbl}')
+    _, dist_rows = engine.run_checked(f'SELECT COUNT(DISTINCT "{col}") FROM {tbl}')
     distinct = dist_rows[0][0]
 
     result: dict = {
@@ -148,12 +148,12 @@ def profile(
 
     base_type = col_type.split("(")[0].strip()
     if base_type in _NUMERIC_TYPES:
-        _, stats = engine.run_select(f'SELECT MIN("{col}"), MAX("{col}"), AVG("{col}") FROM {tbl}')
+        _, stats = engine.run_checked(f'SELECT MIN("{col}"), MAX("{col}"), AVG("{col}") FROM {tbl}')
         result["min"] = stats[0][0]
         result["max"] = stats[0][1]
         result["mean"] = round(stats[0][2], 6) if stats[0][2] is not None else None
     else:
-        _, topk = engine.run_select(
+        _, topk = engine.run_checked(
             f'SELECT "{col}", COUNT(*) AS n FROM {tbl} '
             f'WHERE "{col}" IS NOT NULL '
             f'GROUP BY "{col}" ORDER BY n DESC LIMIT {top_k}'
@@ -202,7 +202,7 @@ def aggregate(
         sql += f" GROUP BY {', '.join(f'"{g}"' for g in group_by)}"
     sql += f" LIMIT {min(limit, 1000)}"
 
-    cols, rows = engine.run_select(sql)
+    cols, rows = engine.run_checked(sql)
     result = shape("aggregate", cols, rows)
     result["total"] = None
     return result
@@ -222,7 +222,7 @@ def filter(  # noqa: A001
     col_expr = ", ".join(f'"{c}"' for c in columns) if columns else "*"
     sql = f"SELECT {col_expr} FROM {tbl} WHERE {where} LIMIT {min(limit, 1000)}"
 
-    cols, rows = engine.run_select(sql)
+    cols, rows = engine.run_checked(sql)
     result = shape("filter", cols, rows)
     result["where"] = where
     return result
@@ -240,10 +240,10 @@ def distinct(
     col = column.replace('"', '""')
     cap = min(limit, 1000)
 
-    _, total_rows = engine.run_select(f'SELECT COUNT(DISTINCT "{col}") FROM {tbl}')
+    _, total_rows = engine.run_checked(f'SELECT COUNT(DISTINCT "{col}") FROM {tbl}')
     total_distinct = total_rows[0][0]
 
-    _, rows = engine.run_select(
+    _, rows = engine.run_checked(
         f'SELECT DISTINCT "{col}" FROM {tbl} WHERE "{col}" IS NOT NULL ORDER BY "{col}" LIMIT {cap}'
     )
     values = [r[0] for r in rows]
@@ -281,7 +281,7 @@ def find_duplicates(
         f"LIMIT {min(limit, 1000)}"
     )
 
-    cols, rows = engine.run_select(sql)
+    cols, rows = engine.run_checked(sql)
     result = shape("find_duplicates", cols, rows)
     result["key_columns"] = columns
     return result
