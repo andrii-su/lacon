@@ -3,10 +3,20 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
-from lacon.engine import DuckDBEngine, EngineError, _table_expr, inject_limit, validate_query
+from lacon.engine import (
+    MAX_LIMIT,
+    DuckDBEngine,
+    EngineError,
+    _table_expr,
+    inject_limit,
+    validate_query,
+)
 from lacon.shaping import _count_tokens, shape
+
+_HAS_LIMIT = re.compile(r"\bLIMIT\b", re.IGNORECASE)
 
 
 def describe(path: str, engine: DuckDBEngine) -> dict:
@@ -83,8 +93,16 @@ def query(
     if show_sql:
         return {"op": "query", "sql": final, "will_execute": False}
 
-    cols, rows = engine.run_select(final)
-    result = shape("query", cols, rows)
+    if _HAS_LIMIT.search(resolved):
+        # Caller set their own LIMIT — respect it, don't second-guess truncation.
+        cols, rows = engine.run_select(final)
+        result = shape("query", cols, rows)
+    else:
+        # We injected the LIMIT — fetch one extra row to detect truncation honestly.
+        cap = min(limit, MAX_LIMIT)
+        sentinel = f"{resolved.rstrip().rstrip(';')} LIMIT {cap + 1}"
+        cols, rows = engine.run_select(sentinel)
+        result = shape("query", cols, rows, limit=cap)
     result["sql"] = final
     return result
 
@@ -195,17 +213,22 @@ def aggregate(
         alias = m.get("alias", f"{fn}_{col}")
         select_parts.append(f'{fn.upper()}("{col}") AS "{alias}"')
 
-    sql = f"SELECT {', '.join(select_parts)} FROM {tbl}"
+    cap = min(limit, 1000)
+    base = f"SELECT {', '.join(select_parts)} FROM {tbl}"
     if where:
-        sql += f" WHERE {where}"
+        base += f" WHERE {where}"
     if group_by:
-        sql += f" GROUP BY {', '.join(f'"{g}"' for g in group_by)}"
-    sql += f" LIMIT {min(limit, 1000)}"
+        base += f" GROUP BY {', '.join(f'"{g}"' for g in group_by)}"
 
-    cols, rows = engine.run_checked(sql)
-    result = shape("aggregate", cols, rows)
-    result["total"] = None
-    return result
+    # Fetch cap + 1 as a truncation sentinel.
+    cols, rows = engine.run_checked(f"{base} LIMIT {cap + 1}")
+
+    total = None
+    if len(rows) > cap:
+        _, cnt = engine.run_checked(f"SELECT COUNT(*) FROM ({base}) AS _agg")
+        total = cnt[0][0]
+
+    return shape("aggregate", cols, rows, limit=cap, total=total)
 
 
 def filter(  # noqa: A001
@@ -219,11 +242,19 @@ def filter(  # noqa: A001
     assert engine is not None
     tbl = _table_expr(path)
 
+    cap = min(limit, 1000)
     col_expr = ", ".join(f'"{c}"' for c in columns) if columns else "*"
-    sql = f"SELECT {col_expr} FROM {tbl} WHERE {where} LIMIT {min(limit, 1000)}"
-
+    # Fetch cap + 1 as a truncation sentinel; the extra row is dropped by shape().
+    sql = f"SELECT {col_expr} FROM {tbl} WHERE {where} LIMIT {cap + 1}"
     cols, rows = engine.run_checked(sql)
-    result = shape("filter", cols, rows)
+
+    total = None
+    if len(rows) > cap:
+        # More matches than shown — pay one COUNT to report the honest total.
+        _, cnt = engine.run_checked(f"SELECT COUNT(*) FROM {tbl} WHERE {where}")
+        total = cnt[0][0]
+
+    result = shape("filter", cols, rows, limit=cap, total=total)
     result["where"] = where
     return result
 
@@ -271,17 +302,23 @@ def find_duplicates(
     if not columns:
         raise EngineError("At least one column required for find_duplicates")
 
+    cap = min(limit, 1000)
     col_list = ", ".join(f'"{c}"' for c in columns)
-    sql = (
+    base = (
         f"SELECT {col_list}, COUNT(*) AS _dup_count "
         f"FROM {tbl} "
         f"GROUP BY {col_list} "
         f"HAVING COUNT(*) > 1 "
-        f"ORDER BY _dup_count DESC "
-        f"LIMIT {min(limit, 1000)}"
+        f"ORDER BY _dup_count DESC"
     )
+    # Fetch cap + 1 as a truncation sentinel.
+    cols, rows = engine.run_checked(f"{base} LIMIT {cap + 1}")
 
-    cols, rows = engine.run_checked(sql)
-    result = shape("find_duplicates", cols, rows)
+    total = None
+    if len(rows) > cap:
+        _, cnt = engine.run_checked(f"SELECT COUNT(*) FROM ({base}) AS _dups")
+        total = cnt[0][0]
+
+    result = shape("find_duplicates", cols, rows, limit=cap, total=total)
     result["key_columns"] = columns
     return result

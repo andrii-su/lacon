@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from lacon.primitives import aggregate, distinct, filter, find_duplicates, profile
+from lacon.primitives import aggregate, distinct, filter, find_duplicates, profile, query, sample
 
 FIXTURES = Path(__file__).parent / "fixtures"
 CSV = str(FIXTURES / "sample.csv")
@@ -156,3 +156,73 @@ def test_find_duplicates_no_columns(engine):
 
     with pytest.raises(EngineError, match="At least one column"):
         find_duplicates(CSV, columns=[], engine=engine)
+
+
+# ── honest truncation ─────────────────────────────────────────────────────────
+
+
+def test_filter_truncated_reports_total(engine):
+    # 5 rows match revenue > 0, but only 2 shown → must own up to the other 3.
+    r = filter(CSV, where="revenue > 0", limit=2, engine=engine)
+    assert r["shown"] == 2
+    assert r["truncated"] is True
+    assert r["total"] == 5
+    assert len(r["rows"]) == 2  # sentinel row dropped
+
+
+def test_filter_not_truncated(engine):
+    r = filter(CSV, where="country = 'US'", limit=50, engine=engine)
+    assert r["truncated"] is False
+    assert r["total"] == 2
+    assert r["shown"] == 2
+
+
+def test_aggregate_truncated_reports_group_total(engine):
+    r = aggregate(
+        CSV,
+        group_by=["country"],
+        metrics=[{"col": "revenue", "fn": "sum"}],
+        limit=1,
+        engine=engine,
+    )
+    assert r["shown"] == 1
+    assert r["truncated"] is True
+    assert r["total"] == 3  # three countries
+
+
+def test_aggregate_not_truncated(engine):
+    r = aggregate(
+        CSV,
+        group_by=["country"],
+        metrics=[{"col": "revenue", "fn": "sum"}],
+        engine=engine,
+    )
+    assert r["truncated"] is False
+    assert r["total"] == 3
+
+
+def test_find_duplicates_truncated(engine):
+    # country has 2 duplicate groups (US, UA); cap at 1.
+    r = find_duplicates(CSV, columns=["country"], limit=1, engine=engine)
+    assert r["shown"] == 1
+    assert r["truncated"] is True
+    assert r["total"] == 2
+
+
+def test_query_truncated_when_auto_limited(engine):
+    r = query(CSV, "SELECT * FROM {file}", limit=2, engine=engine)
+    assert r["shown"] == 2
+    assert r["truncated"] is True
+    # displayed SQL shows the real cap, not the +1 sentinel
+    assert "LIMIT 2" in r["sql"]
+
+
+def test_query_respects_user_limit_no_truncation(engine):
+    r = query(CSV, "SELECT * FROM {file} LIMIT 2", limit=50, engine=engine)
+    assert r["shown"] == 2
+    assert r["truncated"] is False
+
+
+def test_sample_reports_not_truncated(engine):
+    r = sample(CSV, n=2, engine=engine)
+    assert r["truncated"] is False

@@ -114,3 +114,32 @@ def test_shape_known_small_payload():
     """Smoke-test: a minimal payload should cost <50 tokens."""
     result = shape("count", [], [])
     assert result["~tokens"] < 50
+
+
+# ── truncation sentinel ──────────────────────────────────────────────────────
+
+
+def test_shape_truncates_sentinel_row():
+    # 3 rows fetched with limit=2 → drop the extra, flag truncated.
+    result = shape("filter", ["a"], [(1,), (2,), (3,)], limit=2)
+    assert result["shown"] == 2
+    assert result["rows"] == [[1], [2]]
+    assert result["truncated"] is True
+
+
+def test_shape_not_truncated_sets_total_to_shown():
+    result = shape("filter", ["a"], [(1,), (2,)], limit=50)
+    assert result["truncated"] is False
+    assert result["total"] == 2
+
+
+def test_shape_explicit_total_wins():
+    result = shape("filter", ["a"], [(1,), (2,), (3,)], limit=2, total=12834)
+    assert result["truncated"] is True
+    assert result["total"] == 12834
+
+
+def test_shape_no_limit_has_no_total():
+    result = shape("sample", ["a"], [(1,)])
+    assert result["truncated"] is False
+    assert "total" not in result
