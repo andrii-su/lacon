@@ -2,7 +2,16 @@ from pathlib import Path
 
 import pytest
 
-from lacon.primitives import aggregate, distinct, filter, find_duplicates, profile, query, sample
+from lacon.primitives import (
+    aggregate,
+    describe,
+    distinct,
+    filter,
+    find_duplicates,
+    profile,
+    query,
+    sample,
+)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 CSV = str(FIXTURES / "sample.csv")
@@ -226,3 +235,63 @@ def test_query_respects_user_limit_no_truncation(engine):
 def test_sample_reports_not_truncated(engine):
     r = sample(CSV, n=2, engine=engine)
     assert r["truncated"] is False
+
+
+# ── correctness: alias / column collisions and truncation flags ────────────────
+
+
+def test_aggregate_rejects_duplicate_alias(engine):
+    from lacon.engine import EngineError
+
+    with pytest.raises(EngineError, match="Duplicate output column"):
+        aggregate(
+            CSV,
+            metrics=[
+                {"col": "revenue", "fn": "min", "alias": "x"},
+                {"col": "revenue", "fn": "max", "alias": "x"},
+            ],
+            engine=engine,
+        )
+
+
+def test_aggregate_rejects_alias_colliding_with_group_by(engine):
+    from lacon.engine import EngineError
+
+    with pytest.raises(EngineError, match="Duplicate output column"):
+        aggregate(
+            CSV,
+            group_by=["country"],
+            metrics=[{"col": "revenue", "fn": "sum", "alias": "country"}],
+            engine=engine,
+        )
+
+
+def test_find_duplicates_preserves_real_dup_count_column(engine, tmp_path):
+    # A real column literally named _dup_count must not be shadowed by the injected count.
+    data = tmp_path / "d.csv"
+    data.write_text("id,_dup_count\n1,5\n1,5\n2,9\n")
+    r = find_duplicates(str(data), columns=["id", "_dup_count"], engine=engine)
+    # schema: id, _dup_count (real), plus a renamed count column — 3 distinct names.
+    assert len(r["schema"]) == 3
+    assert len(set(r["schema"])) == 3
+    # the duplicated (1,5) group: real _dup_count value 5 is preserved, count is 2
+    row = r["rows"][0]
+    assert row[1] == 5
+    assert row[2] == 2
+
+
+def test_profile_reports_top_values_truncated(engine):
+    r = profile(CSV, column="name", top_k=2, engine=engine)
+    # 5 distinct names, only 2 shown → must flag it.
+    assert r["distinct_count"] == 5
+    assert len(r["top_values"]) == 2
+    assert r["top_values_truncated"] is True
+
+
+def test_describe_glob_reports_size(engine, tmp_path):
+    (tmp_path / "a.csv").write_text("x\n1\n")
+    (tmp_path / "b.csv").write_text("x\n2\n3\n")
+    r = describe(str(tmp_path / "*.csv"), engine)
+    assert r["row_count"] == 3
+    assert r["size_bytes"] > 0
+    assert r["files_matched"] == 2
