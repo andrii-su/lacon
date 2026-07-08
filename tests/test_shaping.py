@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import json
-
 import pytest
 
 from lacon.shaping import _count_tokens, shape
@@ -88,8 +86,11 @@ def test_shape_tokens_reflects_full_result():
     without_tokens = {k: v for k, v in result.items() if k != "~tokens"}
     import tiktoken
 
+    from lacon.shaping import compact_json
+
     enc = tiktoken.get_encoding("cl100k_base")
-    expected = len(enc.encode(json.dumps(without_tokens, default=str)))
+    # ~tokens is measured against the compact (on-the-wire) encoding.
+    expected = len(enc.encode(compact_json(without_tokens)))
     assert result["~tokens"] == expected
 
 

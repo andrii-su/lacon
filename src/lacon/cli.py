@@ -11,6 +11,7 @@ import duckdb
 
 from lacon import primitives as P
 from lacon.engine import DuckDBEngine, EngineError
+from lacon.shaping import compact_json
 
 try:
     from lacon._version import __version__
@@ -161,8 +162,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                     parser.print_help()
                     return 1
 
-        indent = 2 if args.pretty else None
-        print(json.dumps(result, indent=indent, default=str))
+        if args.pretty:
+            print(json.dumps(result, indent=2, default=str))
+        else:
+            # Compact (no inter-token whitespace) — the token-lean default, and what
+            # the ~tokens estimate is measured against.
+            print(compact_json(result))
         return 0
 
     except EngineError as exc:

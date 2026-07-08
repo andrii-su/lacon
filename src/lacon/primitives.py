@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import glob
-import json
 from pathlib import Path
 
 from lacon.engine import (
@@ -16,7 +15,7 @@ from lacon.engine import (
     quote_ident,
     validate_query,
 )
-from lacon.shaping import _count_tokens, shape
+from lacon.shaping import add_token_estimate, shape
 
 
 def describe(path: str, engine: DuckDBEngine) -> dict:
@@ -39,10 +38,7 @@ def describe(path: str, engine: DuckDBEngine) -> dict:
         "files_matched": len(matched) if matched else None,
         "schema": schema,
     }
-    token_count = _count_tokens(json.dumps(result, default=str))
-    if token_count is not None:
-        result["~tokens"] = token_count
-    return result
+    return add_token_estimate(result)
 
 
 def sample(
@@ -73,10 +69,7 @@ def count(
         sql += f" WHERE {where}"
     _, rows = engine.run_checked(sql)
     result = {"op": "count", "count": rows[0][0]}
-    token_count = _count_tokens(json.dumps(result, default=str))
-    if token_count is not None:
-        result["~tokens"] = token_count
-    return result
+    return add_token_estimate(result)
 
 
 def query(
@@ -186,10 +179,7 @@ def profile(
         # Honest truncation: say so when there are more distinct values than shown.
         result["top_values_truncated"] = distinct > len(topk)
 
-    token_count = _count_tokens(json.dumps(result, default=str))
-    if token_count is not None:
-        result["~tokens"] = token_count
-    return result
+    return add_token_estimate(result)
 
 
 def aggregate(
@@ -297,14 +287,16 @@ def distinct(
     )
     values = [r[0] for r in rows]
 
-    return {
-        "op": "distinct",
-        "column": column,
-        "values": values,
-        "shown": len(values),
-        "total_distinct": total_distinct,
-        "truncated": total_distinct > cap,
-    }
+    return add_token_estimate(
+        {
+            "op": "distinct",
+            "column": column,
+            "values": values,
+            "shown": len(values),
+            "total_distinct": total_distinct,
+            "truncated": total_distinct > cap,
+        }
+    )
 
 
 def find_duplicates(

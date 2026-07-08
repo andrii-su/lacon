@@ -12,7 +12,7 @@ def test_cli_happy_path(capsys):
     rc = main(["count", CSV])
     out = capsys.readouterr().out
     assert rc == 0
-    assert '"count": 5' in out
+    assert '"count":5' in out  # compact default (no space after colon)
 
 
 def test_cli_missing_file_is_clean(capsys):
