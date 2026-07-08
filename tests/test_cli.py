@@ -37,3 +37,25 @@ def test_cli_engine_error_is_clean(capsys):
     captured = capsys.readouterr()
     assert rc == 1
     assert "lacon error: Column 'ghost' not found" in captured.err
+
+
+def test_cli_negative_limit_is_clean(capsys):
+    rc = main(["filter", CSV, "--where", "revenue > 0", "--limit", "-5"])
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "Traceback" not in captured.err
+    assert "limit must be >= 0" in captured.err  # not a raw DuckDB binder error
+
+
+def test_cli_pretty_indents(capsys):
+    rc = main(["count", CSV, "--pretty"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "\n  " in out  # indented
+
+
+def test_cli_compact_default(capsys):
+    rc = main(["count", CSV])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert '"op":"count"' in out  # no space after colon
