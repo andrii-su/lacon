@@ -25,6 +25,17 @@ class SafetyError(EngineError):
 # --------------------------------------------------------------------------- #
 
 
+def quote_ident(name: str) -> str:
+    """Quote a SQL identifier, escaping embedded double-quotes.
+
+    Without this, an agent-supplied column/group/alias name containing a ``"`` can
+    close the identifier and splice a different (still single, still valid) SELECT —
+    e.g. ``x" FROM read_csv('/etc/hosts') AS t --`` — reading an arbitrary file.
+    Every caller-supplied identifier must pass through here before interpolation.
+    """
+    return '"' + str(name).replace('"', '""') + '"'
+
+
 def _table_expr(path: str) -> str:
     safe = path.replace("'", "''")
     match Path(path).suffix.lower():
@@ -83,7 +94,7 @@ def has_top_level_limit(sql: str) -> bool:
 
 def inject_limit(sql: str, limit: int) -> str:
     """Append LIMIT if the outermost statement lacks one; cap limit at MAX_LIMIT."""
-    limit = min(limit, MAX_LIMIT)
+    limit = min(int(limit), MAX_LIMIT)
     stripped = sql.rstrip().rstrip(";")
     if not has_top_level_limit(stripped):
         return f"{stripped} LIMIT {limit}"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import glob
 import json
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from lacon.engine import (
     _table_expr,
     has_top_level_limit,
     inject_limit,
+    quote_ident,
     validate_query,
 )
 from lacon.shaping import _count_tokens, shape
@@ -24,12 +26,17 @@ def describe(path: str, engine: DuckDBEngine) -> dict:
     _, cnt = engine.run_select(f"SELECT COUNT(*) FROM {tbl}")
     schema = [{"name": r[0], "type": r[1]} for r in type_rows]
     p = Path(path)
+    # glob.glob handles both a literal path and a glob pattern (dir/*.parquet), so
+    # size_bytes reflects every file actually read instead of nulling on a glob.
+    matched = glob.glob(path)
+    size_bytes = sum(Path(m).stat().st_size for m in matched) if matched else None
     result = {
         "op": "describe",
         "path": path,
         "format": p.suffix.lstrip(".").lower() or "unknown",
         "row_count": cnt[0][0],
-        "size_bytes": p.stat().st_size if p.exists() else None,
+        "size_bytes": size_bytes,
+        "files_matched": len(matched) if matched else None,
         "schema": schema,
     }
     token_count = _count_tokens(json.dumps(result, default=str))
@@ -47,6 +54,7 @@ def sample(
     """First or random N rows. Keep n small (≤20 for exploration)."""
     assert engine is not None
     tbl = _table_expr(path)
+    n = min(int(n), MAX_LIMIT)  # cap — sample must never dump an entire large file
     sql = f"SELECT * FROM {tbl} USING SAMPLE {n}" if random else f"SELECT * FROM {tbl} LIMIT {n}"
     cols, rows = engine.run_select(sql)
     return shape("sample", cols, rows)
@@ -97,7 +105,7 @@ def query(
         result = shape("query", cols, rows)
     else:
         # We injected the LIMIT — fetch one extra row to detect truncation honestly.
-        cap = min(limit, MAX_LIMIT)
+        cap = min(int(limit), MAX_LIMIT)
         sentinel = f"{resolved.rstrip().rstrip(';')} LIMIT {cap + 1}"
         cols, rows = engine.run_select(sentinel)
         result = shape("query", cols, rows, limit=cap)
@@ -133,7 +141,7 @@ def profile(
     """Per-column stats: null %, distinct count, min/max/mean (numeric), top-k values."""
     assert engine is not None
     tbl = _table_expr(path)
-    col = column.replace('"', '""')
+    qcol = quote_ident(column)
 
     _, schema_rows = engine.run_select(f"DESCRIBE SELECT * FROM {tbl}")
     col_type = next(
@@ -146,10 +154,10 @@ def profile(
     _, total_rows = engine.run_select(f"SELECT COUNT(*) FROM {tbl}")
     total = total_rows[0][0]
 
-    _, null_rows = engine.run_checked(f'SELECT COUNT(*) FROM {tbl} WHERE "{col}" IS NULL')
+    _, null_rows = engine.run_checked(f"SELECT COUNT(*) FROM {tbl} WHERE {qcol} IS NULL")
     null_count = null_rows[0][0]
 
-    _, dist_rows = engine.run_checked(f'SELECT COUNT(DISTINCT "{col}") FROM {tbl}')
+    _, dist_rows = engine.run_checked(f"SELECT COUNT(DISTINCT {qcol}) FROM {tbl}")
     distinct = dist_rows[0][0]
 
     result: dict = {
@@ -164,17 +172,19 @@ def profile(
 
     base_type = col_type.split("(")[0].strip()
     if base_type in _NUMERIC_TYPES:
-        _, stats = engine.run_checked(f'SELECT MIN("{col}"), MAX("{col}"), AVG("{col}") FROM {tbl}')
+        _, stats = engine.run_checked(f"SELECT MIN({qcol}), MAX({qcol}), AVG({qcol}) FROM {tbl}")
         result["min"] = stats[0][0]
         result["max"] = stats[0][1]
         result["mean"] = round(stats[0][2], 6) if stats[0][2] is not None else None
     else:
         _, topk = engine.run_checked(
-            f'SELECT "{col}", COUNT(*) AS n FROM {tbl} '
-            f'WHERE "{col}" IS NOT NULL '
-            f'GROUP BY "{col}" ORDER BY n DESC LIMIT {top_k}'
+            f"SELECT {qcol}, COUNT(*) AS n FROM {tbl} "
+            f"WHERE {qcol} IS NOT NULL "
+            f"GROUP BY {qcol} ORDER BY n DESC LIMIT {int(top_k)}"
         )
         result["top_values"] = [{"value": r[0], "count": r[1]} for r in topk]
+        # Honest truncation: say so when there are more distinct values than shown.
+        result["top_values_truncated"] = distinct > len(topk)
 
     token_count = _count_tokens(json.dumps(result, default=str))
     if token_count is not None:
@@ -204,19 +214,29 @@ def aggregate(
         if fn not in _VALID_AGG_FNS:
             raise EngineError(f"Invalid aggregation function '{fn}'. Use: {_VALID_AGG_FNS}")
 
-    select_parts = [f'"{g}"' for g in group_by]
+    # Every output column must be uniquely named — otherwise a schema-keyed consumer
+    # (the natural way to read a schema-first envelope) silently loses data.
+    out_names = list(group_by)
+    select_parts = [quote_ident(g) for g in group_by]
     for m in metrics:
-        col = m["col"].replace('"', '""')
         fn = m["fn"].lower()
-        alias = m.get("alias", f"{fn}_{col}")
-        select_parts.append(f'{fn.upper()}("{col}") AS "{alias}"')
+        alias = m.get("alias", f"{fn}_{m['col']}")
+        out_names.append(alias)
+        select_parts.append(f"{fn.upper()}({quote_ident(m['col'])}) AS {quote_ident(alias)}")
 
-    cap = min(limit, 1000)
+    dupes = {n for n in out_names if out_names.count(n) > 1}
+    if dupes:
+        raise EngineError(
+            f"Duplicate output column name(s): {sorted(dupes)}. "
+            "Give each metric a distinct 'alias'."
+        )
+
+    cap = min(int(limit), MAX_LIMIT)
     base = f"SELECT {', '.join(select_parts)} FROM {tbl}"
     if where:
         base += f" WHERE {where}"
     if group_by:
-        base += f" GROUP BY {', '.join(f'"{g}"' for g in group_by)}"
+        base += f" GROUP BY {', '.join(quote_ident(g) for g in group_by)}"
 
     # Fetch cap + 1 as a truncation sentinel.
     cols, rows = engine.run_checked(f"{base} LIMIT {cap + 1}")
@@ -240,8 +260,8 @@ def filter(  # noqa: A001
     assert engine is not None
     tbl = _table_expr(path)
 
-    cap = min(limit, 1000)
-    col_expr = ", ".join(f'"{c}"' for c in columns) if columns else "*"
+    cap = min(int(limit), MAX_LIMIT)
+    col_expr = ", ".join(quote_ident(c) for c in columns) if columns else "*"
     # Fetch cap + 1 as a truncation sentinel; the extra row is dropped by shape().
     sql = f"SELECT {col_expr} FROM {tbl} WHERE {where} LIMIT {cap + 1}"
     cols, rows = engine.run_checked(sql)
@@ -266,14 +286,14 @@ def distinct(
     """Distinct values for a column (capped, reports if truncated)."""
     assert engine is not None
     tbl = _table_expr(path)
-    col = column.replace('"', '""')
-    cap = min(limit, 1000)
+    qcol = quote_ident(column)
+    cap = min(int(limit), MAX_LIMIT)
 
-    _, total_rows = engine.run_checked(f'SELECT COUNT(DISTINCT "{col}") FROM {tbl}')
+    _, total_rows = engine.run_checked(f"SELECT COUNT(DISTINCT {qcol}) FROM {tbl}")
     total_distinct = total_rows[0][0]
 
     _, rows = engine.run_checked(
-        f'SELECT DISTINCT "{col}" FROM {tbl} WHERE "{col}" IS NOT NULL ORDER BY "{col}" LIMIT {cap}'
+        f"SELECT DISTINCT {qcol} FROM {tbl} WHERE {qcol} IS NOT NULL ORDER BY {qcol} LIMIT {cap}"
     )
     values = [r[0] for r in rows]
 
@@ -300,14 +320,20 @@ def find_duplicates(
     if not columns:
         raise EngineError("At least one column required for find_duplicates")
 
-    cap = min(limit, 1000)
-    col_list = ", ".join(f'"{c}"' for c in columns)
+    cap = min(int(limit), MAX_LIMIT)
+    # Pick a count-column name that can't collide with a real column also named
+    # "_dup_count" — otherwise the injected alias shadows the user's own data.
+    dup_col = "_dup_count"
+    while dup_col in columns:
+        dup_col += "_"
+    q_dup = quote_ident(dup_col)
+    col_list = ", ".join(quote_ident(c) for c in columns)
     base = (
-        f"SELECT {col_list}, COUNT(*) AS _dup_count "
+        f"SELECT {col_list}, COUNT(*) AS {q_dup} "
         f"FROM {tbl} "
         f"GROUP BY {col_list} "
         f"HAVING COUNT(*) > 1 "
-        f"ORDER BY _dup_count DESC"
+        f"ORDER BY {q_dup} DESC"
     )
     # Fetch cap + 1 as a truncation sentinel.
     cols, rows = engine.run_checked(f"{base} LIMIT {cap + 1}")

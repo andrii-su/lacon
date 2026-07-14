@@ -3,7 +3,16 @@ from pathlib import Path
 import pytest
 
 from lacon.engine import SafetyError
-from lacon.primitives import aggregate, count, distinct, filter, find_duplicates, profile, query
+from lacon.primitives import (
+    aggregate,
+    count,
+    distinct,
+    filter,
+    find_duplicates,
+    profile,
+    query,
+    sample,
+)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 CSV = str(FIXTURES / "sample.csv")
@@ -104,7 +113,8 @@ def test_distinct_column_rejects_injection(engine):
 
 
 def test_find_duplicates_rejects_injection(engine):
-    with pytest.raises(SafetyError):
+    # Identifier escaping keeps the payload a single bogus column → binder error, no exfil.
+    with pytest.raises(Exception):  # noqa: B017
         find_duplicates(CSV, columns=['country" ; INSTALL httpfs --'], engine=engine)
 
 
@@ -135,3 +145,55 @@ def test_legit_where_with_keyword_literal_still_works(engine):
     """Data values that happen to contain SQL keywords must not be falsely rejected."""
     r = count(CSV, where="country = 'CREATE'", engine=engine)
     assert r["count"] == 0
+
+
+# ── identifier injection through column/group_by/alias params ──────────────────
+# Payload closes the identifier's " , then splices a different (still single,
+# still valid) SELECT reading an arbitrary file, commenting out the tail with --.
+
+_EXFIL = "x\" FROM read_csv('/etc/hosts', header=false, columns={'x':'VARCHAR'}) AS t --"
+
+
+def _reads_hosts(rows) -> bool:
+    return any("localhost" in str(c) or c == "##" for row in rows for c in row)
+
+
+def test_filter_columns_no_identifier_injection(engine):
+    # Escaped → the payload is a single (nonexistent) column name; DuckDB can't bind it,
+    # so nothing leaks from /etc/hosts. Before the fix this returned the file's contents.
+    with pytest.raises(Exception):  # noqa: B017 - binder error, injection neutralised
+        filter(CSV, where="1=1", columns=[_EXFIL], limit=3, engine=engine)
+
+
+def test_aggregate_group_by_no_identifier_injection(engine):
+    with pytest.raises(Exception):  # noqa: B017 - escaped ident → binder error, no exfil
+        aggregate(
+            CSV,
+            group_by=[_EXFIL],
+            metrics=[{"col": "revenue", "fn": "count"}],
+            engine=engine,
+        )
+
+
+def test_aggregate_alias_no_identifier_injection(engine):
+    alias_exfil = "x\" FROM read_csv('/etc/hosts', header=false, columns={'x':'VARCHAR'}) AS t2 --"
+    r = aggregate(
+        CSV,
+        metrics=[{"col": "revenue", "fn": "count", "alias": alias_exfil}],
+        engine=engine,
+    )
+    # The alias is just a (weird) output column name; the FROM stays on the real file.
+    assert not _reads_hosts(r["rows"])
+
+
+def test_find_duplicates_columns_no_identifier_injection(engine):
+    with pytest.raises(Exception):  # noqa: B017 - escaped ident → binder error, no exfil
+        find_duplicates(CSV, columns=[_EXFIL], engine=engine)
+
+
+def test_sample_caps_absurd_n(engine):
+    # sample must never dump more than MAX_LIMIT rows even if asked for billions.
+    from lacon.engine import MAX_LIMIT
+
+    r = sample(CSV, n=10**9, engine=engine)
+    assert r["shown"] <= MAX_LIMIT
