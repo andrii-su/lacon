@@ -1,3 +1,11 @@
+## [1.1.3](https://github.com/andrii-su/lacon/compare/v1.1.2...v1.1.3) (2026-07-14)
+
+
+### Bug Fixes
+
+* **primitives:** correctness — alias/column collisions and truncation flags ([4463883](https://github.com/andrii-su/lacon/commit/446388380977478c2a490954028b4d732101815e))
+* **security:** escape identifier params — completes the injection fix ([b25dadb](https://github.com/andrii-su/lacon/commit/b25dadbd51ee8c2c6a9cf4e52dcba754be67b21b)), closes [#3](https://github.com/andrii-su/lacon/issues/3)
+
 ## [1.1.2](https://github.com/andrii-su/lacon/compare/v1.1.1...v1.1.2) (2026-07-07)
 
 
