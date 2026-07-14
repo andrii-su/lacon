@@ -37,8 +37,13 @@ CASES = [
     ("count", lambda e: P.count(CSV, engine=e), 20),
     ("profile-numeric", lambda e: P.profile(CSV, column="revenue", engine=e), 90),
     ("profile-categorical", lambda e: P.profile(CSV, column="country", engine=e), 110),
-    ("aggregate", lambda e: P.aggregate(CSV, group_by=["country"],
-                                        metrics=[{"col": "revenue", "fn": "sum"}], engine=e), 90),
+    (
+        "aggregate",
+        lambda e: P.aggregate(
+            CSV, group_by=["country"], metrics=[{"col": "revenue", "fn": "sum"}], engine=e
+        ),
+        90,
+    ),
     ("filter", lambda e: P.filter(CSV, where="revenue > 0", engine=e), 160),
     ("distinct", lambda e: P.distinct(CSV, column="country", engine=e), 40),
     ("find_duplicates", lambda e: P.find_duplicates(CSV, columns=["country"], engine=e), 70),
