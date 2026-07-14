@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import glob
 import json
 from pathlib import Path
 
@@ -25,12 +26,17 @@ def describe(path: str, engine: DuckDBEngine) -> dict:
     _, cnt = engine.run_select(f"SELECT COUNT(*) FROM {tbl}")
     schema = [{"name": r[0], "type": r[1]} for r in type_rows]
     p = Path(path)
+    # glob.glob handles both a literal path and a glob pattern (dir/*.parquet), so
+    # size_bytes reflects every file actually read instead of nulling on a glob.
+    matched = glob.glob(path)
+    size_bytes = sum(Path(m).stat().st_size for m in matched) if matched else None
     result = {
         "op": "describe",
         "path": path,
         "format": p.suffix.lstrip(".").lower() or "unknown",
         "row_count": cnt[0][0],
-        "size_bytes": p.stat().st_size if p.exists() else None,
+        "size_bytes": size_bytes,
+        "files_matched": len(matched) if matched else None,
         "schema": schema,
     }
     token_count = _count_tokens(json.dumps(result, default=str))
@@ -177,6 +183,8 @@ def profile(
             f"GROUP BY {qcol} ORDER BY n DESC LIMIT {int(top_k)}"
         )
         result["top_values"] = [{"value": r[0], "count": r[1]} for r in topk]
+        # Honest truncation: say so when there are more distinct values than shown.
+        result["top_values_truncated"] = distinct > len(topk)
 
     token_count = _count_tokens(json.dumps(result, default=str))
     if token_count is not None:
@@ -206,11 +214,22 @@ def aggregate(
         if fn not in _VALID_AGG_FNS:
             raise EngineError(f"Invalid aggregation function '{fn}'. Use: {_VALID_AGG_FNS}")
 
+    # Every output column must be uniquely named — otherwise a schema-keyed consumer
+    # (the natural way to read a schema-first envelope) silently loses data.
+    out_names = list(group_by)
     select_parts = [quote_ident(g) for g in group_by]
     for m in metrics:
         fn = m["fn"].lower()
         alias = m.get("alias", f"{fn}_{m['col']}")
+        out_names.append(alias)
         select_parts.append(f"{fn.upper()}({quote_ident(m['col'])}) AS {quote_ident(alias)}")
+
+    dupes = {n for n in out_names if out_names.count(n) > 1}
+    if dupes:
+        raise EngineError(
+            f"Duplicate output column name(s): {sorted(dupes)}. "
+            "Give each metric a distinct 'alias'."
+        )
 
     cap = min(int(limit), MAX_LIMIT)
     base = f"SELECT {', '.join(select_parts)} FROM {tbl}"
@@ -302,13 +321,19 @@ def find_duplicates(
         raise EngineError("At least one column required for find_duplicates")
 
     cap = min(int(limit), MAX_LIMIT)
+    # Pick a count-column name that can't collide with a real column also named
+    # "_dup_count" — otherwise the injected alias shadows the user's own data.
+    dup_col = "_dup_count"
+    while dup_col in columns:
+        dup_col += "_"
+    q_dup = quote_ident(dup_col)
     col_list = ", ".join(quote_ident(c) for c in columns)
     base = (
-        f"SELECT {col_list}, COUNT(*) AS _dup_count "
+        f"SELECT {col_list}, COUNT(*) AS {q_dup} "
         f"FROM {tbl} "
         f"GROUP BY {col_list} "
         f"HAVING COUNT(*) > 1 "
-        f"ORDER BY _dup_count DESC"
+        f"ORDER BY {q_dup} DESC"
     )
     # Fetch cap + 1 as a truncation sentinel.
     cols, rows = engine.run_checked(f"{base} LIMIT {cap + 1}")
