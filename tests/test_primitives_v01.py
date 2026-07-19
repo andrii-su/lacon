@@ -295,3 +295,20 @@ def test_describe_glob_reports_size(engine, tmp_path):
     assert r["row_count"] == 3
     assert r["size_bytes"] > 0
     assert r["files_matched"] == 2
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda e: filter(CSV, where="1=1", limit=-1, engine=e),
+        lambda e: distinct(CSV, column="country", limit=-1, engine=e),
+        lambda e: profile(CSV, column="country", top_k=-1, engine=e),
+        lambda e: sample(CSV, n=-1, engine=e),
+        lambda e: aggregate(CSV, metrics=[{"col": "revenue", "fn": "sum"}], limit=-1, engine=e),
+    ],
+)
+def test_negative_row_count_params_rejected_cleanly(engine, call):
+    from lacon.engine import EngineError
+
+    with pytest.raises(EngineError, match="must be >= 0"):
+        call(engine)

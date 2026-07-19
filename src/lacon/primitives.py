@@ -18,6 +18,17 @@ from lacon.engine import (
 from lacon.shaping import add_token_estimate, shape
 
 
+def _nonneg(**named: int | None) -> None:
+    """Reject negative row-count params with a clean error, before they reach DuckDB.
+
+    Validating here (not just in the CLI's argparse) also protects the primitives
+    API that the MCP server will call directly.
+    """
+    for name, value in named.items():
+        if value is not None and int(value) < 0:
+            raise EngineError(f"{name} must be >= 0, got {value}")
+
+
 def describe(path: str, engine: DuckDBEngine) -> dict:
     """Schema + row count + file metadata. Cheapest first call — no data rows."""
     tbl = _table_expr(path)
@@ -49,6 +60,7 @@ def sample(
 ) -> dict:
     """First or random N rows. Keep n small (≤20 for exploration)."""
     assert engine is not None
+    _nonneg(n=n)
     tbl = _table_expr(path)
     n = min(int(n), MAX_LIMIT)  # cap — sample must never dump an entire large file
     sql = f"SELECT * FROM {tbl} USING SAMPLE {n}" if random else f"SELECT * FROM {tbl} LIMIT {n}"
@@ -84,6 +96,7 @@ def query(
     show_sql=True returns the resolved SQL without executing — use for HITL preview.
     """
     assert engine is not None
+    _nonneg(limit=limit)
     tbl = _table_expr(path)
     resolved = sql.replace("{file}", tbl)
     validate_query(resolved)
@@ -133,6 +146,7 @@ def profile(
 ) -> dict:
     """Per-column stats: null %, distinct count, min/max/mean (numeric), top-k values."""
     assert engine is not None
+    _nonneg(top_k=top_k)
     tbl = _table_expr(path)
     qcol = quote_ident(column)
 
@@ -192,6 +206,7 @@ def aggregate(
 ) -> dict:
     """Grouped aggregation. metrics = [{"col": "revenue", "fn": "sum"}, ...]"""
     assert engine is not None
+    _nonneg(limit=limit)
     tbl = _table_expr(path)
     group_by = group_by or []
     metrics = metrics or []
@@ -248,6 +263,7 @@ def filter(  # noqa: A001
 ) -> dict:
     """Matching rows with optional column projection."""
     assert engine is not None
+    _nonneg(limit=limit)
     tbl = _table_expr(path)
 
     cap = min(int(limit), MAX_LIMIT)
@@ -275,6 +291,7 @@ def distinct(
 ) -> dict:
     """Distinct values for a column (capped, reports if truncated)."""
     assert engine is not None
+    _nonneg(limit=limit)
     tbl = _table_expr(path)
     qcol = quote_ident(column)
     cap = min(int(limit), MAX_LIMIT)
@@ -307,6 +324,7 @@ def find_duplicates(
 ) -> dict:
     """Rows duplicated across the given columns, with counts."""
     assert engine is not None
+    _nonneg(limit=limit)
     tbl = _table_expr(path)
 
     if not columns:

@@ -313,12 +313,12 @@ ______________________________________________________________________
 
 ## CLI Reference
 
-### Global options
+### Options
 
-| Flag | Description |
-|---|---|
-| `--pretty` | Pretty-print JSON output |
-| `--version` | Print version and exit |
+| Flag | Scope | Description |
+|---|---|---|
+| `--version` | top-level: `lacon --version` | Print version and exit |
+| `--pretty` | per-command: `lacon describe data.csv --pretty` | Indent JSON output (default is compact, token-lean) |
 
 ### `describe <path>`
 
